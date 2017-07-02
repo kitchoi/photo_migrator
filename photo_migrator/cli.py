@@ -36,6 +36,8 @@ def main(context, debug, verbose):
     "--dry-run", is_flag=True,
     help="Print proposed actions but do not comit them.")
 def rename(context, dir_path, dry_run):
+    """ Rename all photos in a given directory using the date when it is
+    created """
     log_level = context.obj.log_level
     if dry_run:
         log_level = min(log_level, logging.INFO)
@@ -52,6 +54,9 @@ def rename(context, dir_path, dry_run):
     "--dry-run", is_flag=True,
     help="Print proposed actions but do not comit them.")
 def downsize(context, source_dir, out_dir, dry_run):
+    """ Downsize all photos in a given directory and export to an output
+    directory using the same relative paths.
+    """
     log_level = context.obj.log_level
     if dry_run:
         log_level = min(log_level, logging.INFO)
