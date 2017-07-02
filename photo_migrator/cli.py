@@ -1,4 +1,5 @@
 import logging
+import sys
 
 import attr
 import click
@@ -9,6 +10,7 @@ from photo_migrator.utils import log_utils
 
 LOGGER = logging.getLogger("photo_migrator")
 
+_IS_MAIN = (__name__ == "__main__")
 
 @attr.s
 class CliContext(object):
@@ -49,7 +51,12 @@ def main(context, debug, verbose, dry_run):
 def rename(context, dir_path):
     """ Rename all photos in a given directory using the date when it is
     created """
-    with log_utils.set_logger(logger=LOGGER, level=context.obj.log_level):
+    set_logger_cm = log_utils.set_logger(
+        logger=LOGGER,
+        level=context.obj.log_level,
+        stream=(sys.stdout if _IS_MAIN else sys.stderr))
+
+    with set_logger_cm:
         rename_photos(dir_path=dir_path, dry_run=context.obj.dry_run)
 
 
@@ -71,7 +78,11 @@ def downsize(context, source, out_dir, overwrite, target_bytes):
     """ Downsize photo(s) from SOURCE and export to OUT_DIR using the same
     relative path(s).
     """
-    with log_utils.set_logger(logger=LOGGER, level=context.obj.log_level):
+    set_logger_cm = log_utils.set_logger(
+        logger=LOGGER,
+        level=context.obj.log_level,
+        stream=(sys.stdout if _IS_MAIN else sys.stderr))
+    with set_logger_cm:
         downsize_photos(
             dir_or_file=source, out_dir=out_dir,
             dry_run=context.obj.dry_run,
