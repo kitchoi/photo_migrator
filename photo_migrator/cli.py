@@ -12,6 +12,7 @@ LOGGER = logging.getLogger("photo_migrator")
 
 _IS_MAIN = (__name__ == "__main__")
 
+
 @attr.s
 class CliContext(object):
 

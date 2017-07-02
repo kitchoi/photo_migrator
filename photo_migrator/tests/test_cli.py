@@ -3,7 +3,6 @@ import shutil
 import unittest
 
 from click.testing import CliRunner
-import pkg_resources
 
 from photo_migrator import cli
 from photo_migrator.utils import testing

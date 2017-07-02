@@ -6,7 +6,7 @@ import pkg_resources
 
 
 THIS_PACKAGE = __name__.split(".", 1)[0]
-TEST_IMAGES_DIR  = pkg_resources.resource_filename(
+TEST_IMAGES_DIR = pkg_resources.resource_filename(
     THIS_PACKAGE, "tests/images/"
 )
 # Image without datetime in the metadata
