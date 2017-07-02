@@ -1,23 +1,10 @@
 import datetime
 import unittest
 
-import pkg_resources
-
 from photo_migrator.exceptions import DatetimeNotFound
 from photo_migrator.utils import image_utils
-
-THIS_PACKAGE = __name__.split(".", 1)[0]
-# Image without datetime in the metadata
-IMG_NO_DATETIME = pkg_resources.resource_filename(
-    THIS_PACKAGE, "tests/images/no_datetime.jpg"
-)
-# Image with DateTimeOriginal
-IMG_WITH_DATETIME_ORIGINAL = pkg_resources.resource_filename(
-    THIS_PACKAGE, "tests/images/with_datetime_original.jpg"
-)
-# Image with DateTime (but not DateTimeOriginal)
-IMG_WITH_DATETIME = pkg_resources.resource_filename(
-    THIS_PACKAGE, "tests/images/with_datetime_no_datetime_original.jpg"
+from photo_migrator.utils.testing import (
+        IMG_NO_DATETIME, IMG_WITH_DATETIME, IMG_WITH_DATETIME_ORIGINAL
 )
 
 
