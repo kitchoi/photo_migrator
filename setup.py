@@ -10,6 +10,9 @@ setup(
         'click',
         'pillow',
     ],
+    package_data={
+        "tests.images": ["*.jpg"],
+    },
     entry_points={
         "console_scripts": [
             "photom=photo_migrator.cli:main",
