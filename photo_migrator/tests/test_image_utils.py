@@ -12,7 +12,7 @@ IMG_NO_DATETIME = pkg_resources.resource_filename(
     THIS_PACKAGE, "tests/images/no_datetime.jpg"
 )
 # Image with DateTimeOriginal
-IMG_WITH_DATETIME_ORIGINAL= pkg_resources.resource_filename(
+IMG_WITH_DATETIME_ORIGINAL = pkg_resources.resource_filename(
     THIS_PACKAGE, "tests/images/with_datetime_original.jpg"
 )
 # Image with DateTime (but not DateTimeOriginal)

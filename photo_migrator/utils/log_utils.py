@@ -4,6 +4,7 @@ import logging
 
 _FORMAT = "%(levelname)s - %(funcName)s(%(lineno)d) %(message)s"
 
+
 @contextlib.contextmanager
 def set_logger(logger, level):
     old_level = logger.level

@@ -1,11 +1,10 @@
 """ This module provides a console script for renaming photos
 using the date when the photo is take.
 """
-import argparse
 import logging
 import os
 
-import click
+from photo_migrator.exceptions import DatetimeNotFound
 from photo_migrator.utils import image_utils
 
 logger = logging.getLogger(__name__)

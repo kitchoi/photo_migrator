@@ -9,6 +9,7 @@ from photo_migrator.utils import log_utils
 
 LOGGER = logging.getLogger("photo_migrator")
 
+
 @attr.s
 class CliContext(object):
 
