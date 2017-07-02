@@ -14,6 +14,8 @@ class CliContext(object):
 
     log_level = attr.ib(default=logging.WARNING)
 
+    dry_run = attr.ib(default=False)
+
 
 @click.group()
 @click.pass_context
@@ -21,29 +23,33 @@ class CliContext(object):
     "--debug", is_flag=True, help="Set logging level to 'DEBUG'")
 @click.option(
     "--verbose", "-v", is_flag=True, help="Set logging level to 'INFO'")
-def main(context, debug, verbose):
+@click.option(
+    "--dry-run", is_flag=True,
+    help="Print proposed actions but do not comit them.")
+def main(context, debug, verbose, dry_run):
     context.obj = CliContext()
+
+    # Store dry_run
+    context.obj.dry_run = dry_run
+
+    # Set log_level
     if debug:
         context.obj.log_level = logging.DEBUG
     elif verbose:
         context.obj.log_level = logging.INFO
 
+    if dry_run:
+        context.obj.log_level = min(context.obj.log_level, logging.INFO)
+
 
 @main.command()
 @click.pass_context
 @click.argument("dir_path")
-@click.option(
-    "--dry-run", is_flag=True,
-    help="Print proposed actions but do not comit them.")
-def rename(context, dir_path, dry_run):
+def rename(context, dir_path):
     """ Rename all photos in a given directory using the date when it is
     created """
-    log_level = context.obj.log_level
-    if dry_run:
-        log_level = min(log_level, logging.INFO)
-
-    with log_utils.set_logger(logger=LOGGER, level=log_level):
-        rename_photos(dir_path=dir_path, dry_run=dry_run)
+    with log_utils.set_logger(logger=LOGGER, level=context.obj.log_level):
+        rename_photos(dir_path=dir_path, dry_run=context.obj.dry_run)
 
 
 @main.command()
@@ -51,22 +57,16 @@ def rename(context, dir_path, dry_run):
 @click.argument("source_dir")
 @click.argument("out_dir")
 @click.option(
-    "--dry-run", is_flag=True,
-    help="Print proposed actions but do not comit them.")
-@click.option(
     "--overwrite", "-O",
     is_flag=True,
     help="Overwrite existing output files.",
 )
-def downsize(context, source_dir, out_dir, dry_run, overwrite):
+def downsize(context, source_dir, out_dir, overwrite):
     """ Downsize all photos in a given directory and export to an output
     directory using the same relative paths.
     """
-    log_level = context.obj.log_level
-    if dry_run:
-        log_level = min(log_level, logging.INFO)
-
-    with log_utils.set_logger(logger=LOGGER, level=log_level):
+    with log_utils.set_logger(logger=LOGGER, level=context.obj.log_level):
         downsize_photos(
-            dir_path=source_dir, out_dir=out_dir, dry_run=dry_run,
+            dir_path=source_dir, out_dir=out_dir,
+            dry_run=context.obj.dry_run,
             overwrite=overwrite)
