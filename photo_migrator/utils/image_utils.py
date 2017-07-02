@@ -78,18 +78,6 @@ def get_exif(image):
         return exif
 
 
-def has_datetime(photo_path):
-    """ Return true if a photo has a datetime in its meta data.
-    """
-    try:
-        get_datetime_creation(photo_path)
-    except DatetimeNotFound as exception:
-        logger.debug("%s has no timestamp. Reason: %s ", photo_path, exception)
-        return False
-    else:
-        return True
-
-
 def is_photo(filepath):
     """ Return true if we can open the file as an image.
     """
