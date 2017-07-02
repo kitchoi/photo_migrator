@@ -100,15 +100,18 @@ def downsize_photos(dir_path, out_dir, overwrite=False, dry_run=False):
         out_path = os.path.join(
             out_dir, os.path.relpath(photo_path, start=dir_path))
         logger.info("Downsize {!r} -> {!r}".format(photo_path, out_path))
-        if not dry_run:
-            try:
-                copy_photo(
-                    photo_path=photo_path, out_path=out_path,
-                    transform=downsize, overwrite=overwrite)
-            except (IOError, DatetimeNotFound) as exception:
-                # Expected output files may exist or datetime cannot
-                # be obtained.
-                logger.error(exception)
-                logger.debug(
-                    "Cannot downsize photo {!r}.".format(photo_path),
-                    exc_info=True)
+
+        if dry_run:
+            return
+
+        try:
+            copy_photo(
+                photo_path=photo_path, out_path=out_path,
+                transform=downsize, overwrite=overwrite)
+        except (IOError, DatetimeNotFound) as exception:
+            # Expected output files may exist or datetime cannot
+            # be obtained.
+            logger.error(exception)
+            logger.debug(
+                "Cannot downsize photo {!r}.".format(photo_path),
+                exc_info=True)
