@@ -1,3 +1,4 @@
+import asyncio
 from functools import partial
 import math
 import logging
@@ -81,9 +82,35 @@ def copy_photo(
             im.save(out_path, exif=im.info.get("exif", b""))
 
 
-def downsize_photos(
-        dir_or_file, out_dir, overwrite=False, dry_run=False,
-        size_in_bytes=TARGET_IMAGE_BYTES):
+async def downsize_one_photo(photo_path, out_path, size_in_bytes, overwrite):
+    """ Coroutine to downsize one photo
+
+    Parameters
+    ----------
+    photo_path : str
+        Path to the source photo to be downsized.
+    out_path : str
+        Path to the output directory.
+    size_in_bytes : int
+        Target image size in bytes.
+    overwrite : boolean
+        Whether overwriting existing file is allowed.
+    """
+    func = partial(
+        copy_photo,
+        photo_path=photo_path,
+        out_path=out_path,
+        transform=partial(downsize, target_size=size_in_bytes),
+        overwrite=overwrite)
+
+    loop = asyncio.get_event_loop()
+    await loop.run_in_executor(None, func)
+    return photo_path
+
+
+async def downsize_photos(
+        dir_or_file, out_dir, size_in_bytes=TARGET_IMAGE_BYTES,
+        overwrite=False, dry_run=False):
     """ Downsize all the photos in a given directory and export the
     output to the output directory with the same relative paths.
 
@@ -93,12 +120,12 @@ def downsize_photos(
         Path to the source directory/file.
     out_path : str
         Path to the output directory.
+    size_in_bytes : int
+        Target image size in bytes.
     overwrite : boolean
         Whether overwriting existing file is allowed.
     dry_run : boolean
         If true, log the proposed action and then do nothing.
-    size_in_bytes : int
-        Target image size in bytes.
     """
     if os.path.isfile(dir_or_file):
         photo_paths = [os.path.abspath(dir_or_file)]
@@ -106,23 +133,32 @@ def downsize_photos(
     else:
         photo_paths = image_utils.grep_all_image_paths(dir_or_file)
         source_dir = dir_or_file
-    transform_fun = partial(downsize, target_size=size_in_bytes)
+
+    # Corotines
+    to_do_coros = []
     for photo_path in photo_paths:
-        out_path = os.path.join(
-            out_dir, os.path.relpath(photo_path, start=source_dir))
+        relpath = os.path.relpath(photo_path, source_dir)
+        out_path = os.path.join(out_dir, relpath)
         logger.info("Downsize {!r} -> {!r}".format(photo_path, out_path))
 
         if dry_run:
             continue
 
+        to_do_coros.append(
+            downsize_one_photo(
+                photo_path=photo_path,
+                out_path=out_path,
+                size_in_bytes=size_in_bytes,
+                overwrite=overwrite,
+            )
+        )
+
+    for future in asyncio.as_completed(to_do_coros):
         try:
-            copy_photo(
-                photo_path=photo_path, out_path=out_path,
-                transform=transform_fun, overwrite=overwrite)
+            photo_path = await future
         except (IOError, DatetimeNotFound) as exception:
             # Expected output files may exist or datetime cannot
             # be obtained.
             logger.error(exception)
-            logger.debug(
-                "Cannot downsize photo {!r}.".format(photo_path),
-                exc_info=True)
+        else:
+            logger.info("Successfully downsized %s", photo_path)
