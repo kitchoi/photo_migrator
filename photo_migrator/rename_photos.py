@@ -25,17 +25,15 @@ def rename_one_file(
         Whether overwriting existing file is allowed.
     dry_run : boolean
         If true, log proposed actions but not actually rename the file.
-    """
-    try:
-        timestamp = image_utils.get_datetime_creation(photo_path=photo_path)
-    except ValueError:
-        logger.warning(
-            "Could not rename {!r}, datetime cannot be obtained".format(
-                photo_path))
-        return
 
+    Raises
+    ------
+    IOError
+        If the output file exists and overwrite is false.
+    """
     dirpath, basename = os.path.split(photo_path)
     _, file_ext = os.path.splitext(basename)
+    timestamp = image_utils.get_datetime_creation(photo_path=photo_path)
     new_filename = timestamp.strftime(fmt)+file_ext
     if new_filename == basename:
         # Nothing to do, it is renamed to itself.
@@ -46,10 +44,11 @@ def rename_one_file(
     logger.info("Rename {!r} to {!r}".format(photo_path, new_filepath))
 
     if os.path.exists(new_filepath) and not overwrite:
-        logger.error(
+        raise IOError(
             "{!r} already exists and overwrite is false. "
             "Doing nothing.".format(new_filepath))
-        return
+    elif os.path.exists(new_filepath) and overwrite:
+        logger.warning("Overwriting {!r}".format(new_filepath))
 
     if dry_run:
         return
@@ -74,4 +73,12 @@ def rename_photos(dir_path, dry_run=False):
     photo_paths = image_utils.grep_all_image_paths(dir_path)
     for photo_path in photo_paths:
         logger.info("Found {!r}".format(photo_path))
-        rename_one_file(photo_path=photo_path, dry_run=dry_run)
+        try:
+            rename_one_file(photo_path=photo_path, dry_run=dry_run)
+        except (IOError, DatetimeNotFound) as exception:
+            # Expected output files may exist or datetime cannot
+            # be obtained.
+            logger.error(str(exception))
+            logger.debug(
+                "Cannot rename photo {!r}.".format(photo_path),
+                exc_info=True)

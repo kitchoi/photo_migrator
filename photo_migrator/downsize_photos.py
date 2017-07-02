@@ -10,6 +10,7 @@ from pathlib import Path
 
 from PIL import Image
 
+from photo_migrator.exceptions import DatetimeNotFound
 from photo_migrator.utils import image_utils
 
 logger = logging.getLogger(__name__)
@@ -51,9 +52,18 @@ def copy_photo(
         Tranform function for the loaded image.
     overwrite : boolean
         Whether overwriting existing file is allowed.
+
+    Raises
+    ------
+    IOError
+        - If the output path already exists and overwrite is false.
+        - If the output path is in a directory that does not exist and
+          create_dir is false.
     """
     if os.path.exists(out_path) and not overwrite:
         raise IOError("{} already exists.".format(out_path))
+    elif os.path.exists(out_path) and overwrite:
+        logger.warning("Overwriting {!r}".format(out_path))
 
     out_dir, filename = os.path.split(out_path)
     if not os.path.exists(out_dir):
@@ -91,6 +101,14 @@ def downsize_photos(dir_path, out_dir, overwrite=False, dry_run=False):
             out_dir, os.path.relpath(photo_path, start=dir_path))
         logger.info("Downsize {!r} -> {!r}".format(photo_path, out_path))
         if not dry_run:
-            copy_photo(
-                photo_path=photo_path, out_path=out_path,
-                transform=downsize, overwrite=overwrite)
+            try:
+                copy_photo(
+                    photo_path=photo_path, out_path=out_path,
+                    transform=downsize, overwrite=overwrite)
+            except (IOError, DatetimeNotFound) as exception:
+                # Expected output files may exist or datetime cannot
+                # be obtained.
+                logger.error(exception)
+                logger.debug(
+                    "Cannot downsize photo {!r}.".format(photo_path),
+                    exc_info=True)

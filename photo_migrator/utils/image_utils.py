@@ -5,6 +5,8 @@ import os
 from PIL import Image
 from PIL.ExifTags import TAGS
 
+from photo_migrator.exceptions import DatetimeNotFound
+
 logger = logging.getLogger(__name__)
 
 # Get the tag index for 'DateTimeOriginal'
@@ -32,18 +34,18 @@ def get_datetime_creation(photo_path):
 
     Raises
     ------
-    ValueError
+    DatetimeNotFound
         If the date cannot be obtained.
     """
     with Image.open(photo_path) as image:
         if not hasattr(image, "_getexif"):
-            raise ValueError(
+            raise DatetimeNotFound(
                 "Could not obtain EXIF tags for {!r}. "
                 "No attribute '_getexif'".format(photo_path))
 
         info = image._getexif()
         if info is None:
-            raise ValueError(
+            raise DatetimeNotFound(
                 "Could not obtain EXIF tags for {!r}".format(photo_path))
 
         for index in [DATE_TIME_ORIGINAL, DATE_TIME_DIGITIZED, DATE_TIME]:
@@ -53,7 +55,7 @@ def get_datetime_creation(photo_path):
                     name=TAGS[index], value=date_time_str))
                 break
         else:
-            raise ValueError(
+            raise DatetimeNotFound(
                 "Could not obtain DateTimeOriginal/DateTimeDigitized/DateTime "
                 "for {!r}".format(photo_path))
 
@@ -65,7 +67,7 @@ def has_datetime(photo_path):
     """
     try:
         get_datetime_creation(photo_path)
-    except ValueError as exception:
+    except DatetimeNotFound as exception:
         logger.debug("%s has no timestamp. Reason: %s ", photo_path, exception)
         return False
     else:
