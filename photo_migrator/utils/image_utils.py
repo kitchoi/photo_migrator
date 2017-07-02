@@ -38,15 +38,7 @@ def get_datetime_creation(photo_path):
         If the date cannot be obtained.
     """
     with Image.open(photo_path) as image:
-        if not hasattr(image, "_getexif"):
-            raise DatetimeNotFound(
-                "Could not obtain EXIF tags for {!r}. "
-                "No attribute '_getexif'".format(photo_path))
-
-        info = image._getexif()
-        if info is None:
-            raise DatetimeNotFound(
-                "Could not obtain EXIF tags for {!r}".format(photo_path))
+        info = get_exif(image)
 
         for index in [DATE_TIME_ORIGINAL, DATE_TIME_DIGITIZED, DATE_TIME]:
             if index in info:
@@ -60,6 +52,30 @@ def get_datetime_creation(photo_path):
                 "for {!r}".format(photo_path))
 
     return datetime.datetime.strptime(date_time_str, "%Y:%m:%d %H:%M:%S")
+
+
+def get_exif(image):
+    """ Return the EXIF (dict) for a given PIL.Image.
+
+    Parameters
+    ----------
+    image : PIL.Image.Image
+        Image object
+
+    Returns
+    -------
+    exif : dict
+    """
+    # There isn't a better and more reliable option from Image
+    # for getting the EXIF.
+    try:
+        exif = image._getexif()
+    except AttributeError:
+        return {}
+    else:
+        if exif is None:
+            return {}
+        return exif
 
 
 def has_datetime(photo_path):
