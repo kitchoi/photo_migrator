@@ -53,7 +53,12 @@ def rename(context, dir_path, dry_run):
 @click.option(
     "--dry-run", is_flag=True,
     help="Print proposed actions but do not comit them.")
-def downsize(context, source_dir, out_dir, dry_run):
+@click.option(
+    "--overwrite", "-O",
+    is_flag=True,
+    help="Overwrite existing output files.",
+)
+def downsize(context, source_dir, out_dir, dry_run, overwrite):
     """ Downsize all photos in a given directory and export to an output
     directory using the same relative paths.
     """
@@ -63,4 +68,5 @@ def downsize(context, source_dir, out_dir, dry_run):
 
     with log_utils.set_logger(logger=LOGGER, level=log_level):
         downsize_photos(
-            dir_path=source_dir, out_dir=out_dir, dry_run=dry_run)
+            dir_path=source_dir, out_dir=out_dir, dry_run=dry_run,
+            overwrite=overwrite)
