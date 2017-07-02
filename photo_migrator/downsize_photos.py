@@ -102,7 +102,7 @@ def downsize_photos(dir_path, out_dir, overwrite=False, dry_run=False):
         logger.info("Downsize {!r} -> {!r}".format(photo_path, out_path))
 
         if dry_run:
-            return
+            continue
 
         try:
             copy_photo(
