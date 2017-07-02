@@ -3,7 +3,7 @@ import logging
 import attr
 import click
 
-from photo_migrator.downsize_photos import downsize_photos
+from photo_migrator.downsize_photos import downsize_photos, TARGET_IMAGE_BYTES
 from photo_migrator.rename_photos import rename_photos
 from photo_migrator.utils import log_utils
 
@@ -61,7 +61,12 @@ def rename(context, dir_path):
     is_flag=True,
     help="Overwrite existing output files.",
 )
-def downsize(context, source_dir, out_dir, overwrite):
+@click.option(
+    "--target-bytes",
+    default=TARGET_IMAGE_BYTES,
+    help="Target size in bytes.",
+)
+def downsize(context, source_dir, out_dir, overwrite, target_bytes):
     """ Downsize all photos in a given directory and export to an output
     directory using the same relative paths.
     """
@@ -69,4 +74,5 @@ def downsize(context, source_dir, out_dir, overwrite):
         downsize_photos(
             dir_path=source_dir, out_dir=out_dir,
             dry_run=context.obj.dry_run,
-            overwrite=overwrite)
+            overwrite=overwrite,
+            size_in_bytes=target_bytes)

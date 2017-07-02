@@ -1,5 +1,4 @@
 import argparse
-from collections import Counter
 import datetime
 from functools import partial
 import math
@@ -15,8 +14,10 @@ from photo_migrator.utils import image_utils
 
 logger = logging.getLogger(__name__)
 
+TARGET_IMAGE_BYTES = 1048576
 
-def downsize(image, target_size=1048576, resample=Image.ANTIALIAS):
+
+def downsize(image, target_size=TARGET_IMAGE_BYTES, resample=Image.ANTIALIAS):
     """ Downsize the given image to the target size.
 
     Parameters
@@ -30,8 +31,10 @@ def downsize(image, target_size=1048576, resample=Image.ANTIALIAS):
     """
     original_size = os.path.getsize(image.filename)
     ratio = math.sqrt(target_size/float(original_size))
-    width, height = image.size
-    new_size = (int(width*ratio), int(height*ratio))
+    new_size = tuple(
+        max(1, int(value*ratio)) for value in image.size
+    )
+    logger.debug("Target size %r", new_size)
     image.thumbnail(new_size, resample=resample)
 
 
@@ -80,7 +83,9 @@ def copy_photo(
             im.save(out_path)
 
 
-def downsize_photos(dir_path, out_dir, overwrite=False, dry_run=False):
+def downsize_photos(
+        dir_path, out_dir, overwrite=False, dry_run=False,
+        size_in_bytes=TARGET_IMAGE_BYTES):
     """ Downsize all the photos in a given directory and export the
     output to the output directory with the same relative paths.
 
@@ -94,8 +99,11 @@ def downsize_photos(dir_path, out_dir, overwrite=False, dry_run=False):
         Whether overwriting existing file is allowed.
     dry_run : boolean
         If true, log the proposed action and then do nothing.
+    size_in_bytes : int
+        Target image size in bytes.
     """
     photo_paths = image_utils.grep_all_image_paths(dir_path)
+    transform_fun = partial(downsize, target_size=size_in_bytes)
     for photo_path in photo_paths:
         out_path = os.path.join(
             out_dir, os.path.relpath(photo_path, start=dir_path))
@@ -107,7 +115,7 @@ def downsize_photos(dir_path, out_dir, overwrite=False, dry_run=False):
         try:
             copy_photo(
                 photo_path=photo_path, out_path=out_path,
-                transform=downsize, overwrite=overwrite)
+                transform=transform_fun, overwrite=overwrite)
         except (IOError, DatetimeNotFound) as exception:
             # Expected output files may exist or datetime cannot
             # be obtained.
