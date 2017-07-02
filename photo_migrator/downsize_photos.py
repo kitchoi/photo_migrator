@@ -84,15 +84,15 @@ def copy_photo(
 
 
 def downsize_photos(
-        dir_path, out_dir, overwrite=False, dry_run=False,
+        dir_or_file, out_dir, overwrite=False, dry_run=False,
         size_in_bytes=TARGET_IMAGE_BYTES):
     """ Downsize all the photos in a given directory and export the
     output to the output directory with the same relative paths.
 
     Parameters
     ----------
-    dir_path : str
-        Path to the source directory.
+    dir_or_file : str
+        Path to the source directory/file.
     out_path : str
         Path to the output directory.
     overwrite : boolean
@@ -102,11 +102,16 @@ def downsize_photos(
     size_in_bytes : int
         Target image size in bytes.
     """
-    photo_paths = image_utils.grep_all_image_paths(dir_path)
+    if os.path.isfile(dir_or_file):
+        photo_paths = [os.path.abspath(dir_or_file)]
+        source_dir = os.path.dirname(dir_or_file)
+    else:
+        photo_paths = image_utils.grep_all_image_paths(dir_or_file)
+        source_dir = dir_or_file
     transform_fun = partial(downsize, target_size=size_in_bytes)
     for photo_path in photo_paths:
         out_path = os.path.join(
-            out_dir, os.path.relpath(photo_path, start=dir_path))
+            out_dir, os.path.relpath(photo_path, start=source_dir))
         logger.info("Downsize {!r} -> {!r}".format(photo_path, out_path))
 
         if dry_run:

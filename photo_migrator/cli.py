@@ -54,7 +54,7 @@ def rename(context, dir_path):
 
 @main.command()
 @click.pass_context
-@click.argument("source_dir")
+@click.argument("source")
 @click.argument("out_dir")
 @click.option(
     "--overwrite", "-O",
@@ -66,13 +66,13 @@ def rename(context, dir_path):
     default=TARGET_IMAGE_BYTES,
     help="Target size in bytes.",
 )
-def downsize(context, source_dir, out_dir, overwrite, target_bytes):
-    """ Downsize all photos in a given directory and export to an output
-    directory using the same relative paths.
+def downsize(context, source, out_dir, overwrite, target_bytes):
+    """ Downsize photo(s) from SOURCE and export to OUT_DIR using the same
+    relative path(s).
     """
     with log_utils.set_logger(logger=LOGGER, level=context.obj.log_level):
         downsize_photos(
-            dir_path=source_dir, out_dir=out_dir,
+            dir_or_file=source, out_dir=out_dir,
             dry_run=context.obj.dry_run,
             overwrite=overwrite,
             size_in_bytes=target_bytes)
