@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import sys
 
@@ -80,20 +79,17 @@ def downsize(context, source, out_dir, overwrite, target_bytes):
     """ Downsize photo(s) from SOURCE and export to OUT_DIR using the same
     relative path(s).
     """
-    loop = asyncio.get_event_loop()
     set_logger_cm = log_utils.set_logger(
         logger=LOGGER,
         level=context.obj.log_level,
         stream=(sys.stdout if _IS_MAIN else sys.stderr))
     with set_logger_cm:
-        loop.run_until_complete(
-            downsize_photos(
-                dir_or_file=source, out_dir=out_dir,
-                dry_run=context.obj.dry_run,
-                overwrite=overwrite,
-                size_in_bytes=target_bytes)
+        downsize_photos(
+            dir_or_file=source, out_dir=out_dir,
+            dry_run=context.obj.dry_run,
+            overwrite=overwrite,
+            size_in_bytes=target_bytes,
         )
-    loop.close()
 
 
 if __name__ == "__main__":

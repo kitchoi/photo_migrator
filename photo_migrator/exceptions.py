@@ -7,3 +7,8 @@ class DatetimeNotFound(BaseException):
     an image cannot be obtained.
     """
     pass
+
+
+class ImageFormatError(BaseException):
+    """ Raise when the image file cannot be processed due to its format."""
+    pass

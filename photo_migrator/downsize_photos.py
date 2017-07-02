@@ -8,7 +8,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from photo_migrator.exceptions import DatetimeNotFound
+from photo_migrator.exceptions import DatetimeNotFound, ImageFormatError
 from photo_migrator.utils import image_utils
 
 logger = logging.getLogger(__name__)
@@ -61,6 +61,8 @@ def copy_photo(
         - If the output path already exists and overwrite is false.
         - If the output path is in a directory that does not exist and
           create_dir is false.
+    ImageFormatError
+        - If the image cannot be processed due to its format.
     """
     if os.path.exists(out_path) and not overwrite:
         raise IOError("{} already exists.".format(out_path))
@@ -78,6 +80,11 @@ def copy_photo(
         shutil.copy(photo_path, out_path)
     else:
         with Image.open(photo_path) as im:
+            if im.format.upper() not in Image.SAVE:
+                raise ImageFormatError(
+                    "Format of {!r} ({!r}) is not one of {!r}".format(
+                        photo_path, im.format, list(Image.SAVE)))
+
             transform(im)
             im.save(out_path, exif=im.info.get("exif", b""))
 
@@ -104,11 +111,18 @@ async def downsize_one_photo(photo_path, out_path, size_in_bytes, overwrite):
         overwrite=overwrite)
 
     loop = asyncio.get_event_loop()
-    await loop.run_in_executor(None, func)
-    return photo_path
+    future = loop.run_in_executor(None, func)
+    try:
+        await asyncio.wrap_future(future)
+    except (IOError, DatetimeNotFound, ImageFormatError) as exception:
+        # Expected output files may exist or datetime cannot
+        # be obtained.
+        logger.error(exception)
+    else:
+        logger.info("Successfully downsized %s", photo_path)
 
 
-async def downsize_photos(
+def downsize_photos(
         dir_or_file, out_dir, size_in_bytes=TARGET_IMAGE_BYTES,
         overwrite=False, dry_run=False):
     """ Downsize all the photos in a given directory and export the
@@ -152,13 +166,7 @@ async def downsize_photos(
                 overwrite=overwrite,
             )
         )
-
-    for future in asyncio.as_completed(to_do_coros):
-        try:
-            photo_path = await future
-        except (IOError, DatetimeNotFound) as exception:
-            # Expected output files may exist or datetime cannot
-            # be obtained.
-            logger.error(exception)
-        else:
-            logger.info("Successfully downsized %s", photo_path)
+    loop = asyncio.get_event_loop()
+    wait_coro = asyncio.wait(to_do_coros)
+    loop.run_until_complete(wait_coro)
+    loop.close()
