@@ -80,7 +80,7 @@ def copy_photo(
     else:
         with Image.open(photo_path) as im:
             transform(im)
-            im.save(out_path)
+            im.save(out_path, exif=im.info.get("exif"))
 
 
 def downsize_photos(
