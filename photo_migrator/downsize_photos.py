@@ -89,8 +89,8 @@ def copy_photo(
             im.save(out_path, exif=im.info.get("exif", b""))
 
 
-async def downsize_one_photo(photo_path, out_path, size_in_bytes, overwrite):
-    """ Coroutine to downsize one photo
+def downsize_one_photo(photo_path, out_path, size_in_bytes, overwrite):
+    """ Downsize one photo.
 
     Parameters
     ----------
@@ -103,17 +103,12 @@ async def downsize_one_photo(photo_path, out_path, size_in_bytes, overwrite):
     overwrite : boolean
         Whether overwriting existing file is allowed.
     """
-    func = partial(
-        copy_photo,
-        photo_path=photo_path,
-        out_path=out_path,
-        transform=partial(downsize, target_size=size_in_bytes),
-        overwrite=overwrite)
-
-    loop = asyncio.get_event_loop()
-    future = loop.run_in_executor(None, func)
     try:
-        await asyncio.wrap_future(future)
+        copy_photo(
+            photo_path=photo_path,
+            out_path=out_path,
+            transform=partial(downsize, target_size=size_in_bytes),
+            overwrite=overwrite)
     except (IOError, DatetimeNotFound, ImageFormatError) as exception:
         # Expected output files may exist or datetime cannot
         # be obtained.
@@ -148,6 +143,7 @@ def downsize_photos(
         photo_paths = image_utils.grep_all_image_paths(dir_or_file)
         source_dir = dir_or_file
 
+    loop = asyncio.get_event_loop()
     # Corotines
     to_do_coros = []
     for photo_path in photo_paths:
@@ -159,14 +155,15 @@ def downsize_photos(
             continue
 
         to_do_coros.append(
-            downsize_one_photo(
-                photo_path=photo_path,
-                out_path=out_path,
-                size_in_bytes=size_in_bytes,
-                overwrite=overwrite,
+            loop.run_in_executor(
+                None,
+                downsize_one_photo,
+                photo_path,
+                out_path,
+                size_in_bytes,
+                overwrite,
             )
         )
-    loop = asyncio.get_event_loop()
     wait_coro = asyncio.wait(to_do_coros)
     loop.run_until_complete(wait_coro)
     loop.close()
